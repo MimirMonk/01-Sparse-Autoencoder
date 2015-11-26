@@ -43,20 +43,40 @@ b2grad = zeros(size(b2));
 % 
 
 
+%tic;
+% Feed forward
+z2 = W1*data;
+a2 = sigmoid(z2);
+z3 = W2*a2;
+a3 = sigmoid(z3);
+
+% Squared Error Term
+diff = a3-data;
+squarederror = sum(diff.^2, 1); % 2 * J(W,b;x,y)
+m = length(squarederror);
+meansquarederror = sum(squarederror) / m / 2; % 1/2 for squared error
+
+delta3 = a3.*(1-a3) .* diff;
+delta2 = a2.*(1-a2) .* (W2'*delta3);
 
 
 
+% Weight Decay Term
+weightdecay = 0;
+
+% Sparsity penalty Term
+sparsitypenalty = 0;
 
 
 
+% Integration
+cost = meansquarederror + weightdecay + sparsitypenalty;
+W1grad = delta2 * data';
+W2grad = delta3 * a2';
+b1grad = delta2;
+b2grad = delta3;
 
-
-
-
-
-
-
-
+%toc;
 
 
 
