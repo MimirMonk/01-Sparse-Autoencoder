@@ -73,8 +73,8 @@ sparsitypenalty = 0;
 cost = meansquarederror + weightdecay + sparsitypenalty;
 W1grad = delta2 * data';
 W2grad = delta3 * a2';
-b1grad = delta2;
-b2grad = delta3;
+b1grad = sum(delta2,2);
+b2grad = sum(delta3,2);
 
 %toc;
 
