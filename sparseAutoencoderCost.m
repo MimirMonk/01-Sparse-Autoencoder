@@ -44,38 +44,44 @@ b2grad = zeros(size(b2));
 
 
 %tic;
+m = size(data,2);
 % Feed forward
-z2 = W1*data;
+z2 = W1*data + repmat(b1,[1 m]);
 a2 = sigmoid(z2);
-z3 = W2*a2;
+z3 = W2*a2 + repmat(b2,[1 m]);
 a3 = sigmoid(z3);
 
 % Squared Error Term
 diff = a3-data;
 squarederror = sum(diff.^2, 1); % 2 * J(W,b;x,y)
-m = length(squarederror);
 meansquarederror = sum(squarederror) / m / 2; % 1/2 for squared error
 
-delta3 = a3.*(1-a3) .* diff;
-delta2 = a2.*(1-a2) .* (W2'*delta3);
 
+rho = sum(a2,2)./m;
+temp1 = sparsityParam./rho;
+temp2 = (1-sparsityParam)./(ones(size(rho))-rho);
+delta3 = a3.*(1-a3) .* diff;
+delta2 = a2.*(1-a2) .* (W2'*delta3 + repmat( beta*(-temp1+temp2), [1,m] ) );
+% delta2test = a2.*(1-a2) .* (W2'*delta3 );
 
 
 % Weight Decay Term
-weightdecay = 0;
+weightdecay = ( sum(W1(:).^2)+sum(W2(:).^2) ) * lambda / 2;
 
 % Sparsity penalty Term
-sparsitypenalty = 0;
+KL = sparsityParam .* log(temp1) + (1-sparsityParam) .* log(temp2);
+sparsitypenalty = beta * sum(KL);
 
 
 
 % Integration
 cost = meansquarederror + weightdecay + sparsitypenalty;
-W1grad = delta2 * data';
-W2grad = delta3 * a2';
-b1grad = sum(delta2,2);
-b2grad = sum(delta3,2);
+W1grad = (delta2 * data')./m + W1 .* lambda;
+W2grad = (delta3 * a2')./m + W2 .* lambda;
+b1grad = sum(delta2,2)./m;
+b2grad = sum(delta3,2)./m;
 
+% W1gradtest = (delta2test * data')./m + W1 .* lambda +beta*(-temp1+temp2) ;
 %toc;
 
 
