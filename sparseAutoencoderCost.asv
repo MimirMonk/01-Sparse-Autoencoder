@@ -71,7 +71,7 @@ for j=1:numel(rho)
     sp = sp + sparsityParam * log(sparsityParam/rho(j)) + (1-sparsityParam) * log( (1-sparsityParam)/(1-rho(j)) );
 end
 
-cost = J_Wb + beta * sp;
+cost = J_Wb + beta * sp;s
 
 % Gradients
 for k = 1:m
@@ -86,19 +86,14 @@ for k = 1:m
     a3 = sigmoid(z3);
 
     delta3 = -(y-a3).* (a3.*(1-a3));
-    delta2 = ( W2'*delta3 + beta*( -sparsityParam./rho + (1-sparsityParam)./(1-rho) ) ) .* (a2.*(1-a2));
+    delta2 = ( W2'*delta3 + beta*( -sparsityParam/rho + (1-sparsityParam)/(1-rho) ) ) .* (a2.*(1-a2));
     
     W1grad = W1grad + delta2 * x';
-    b1grad = b1grad + delta2;
-    W2grad = W2grad + delta3 * a2';
-    b2grad = b2grad + delta3;
+    D_b1 = delta2;
+    W1grad = Wgrad + delta3 * a2';
+    D_b2 = delta3;
+    
 end
-
-W1grad = W1grad/m + lambda * W1;
-W2grad = W2grad/m + lambda * W2;
-b1grad = b1grad/m;
-b2grad = b2grad/m;
-
 
 %toc;
 

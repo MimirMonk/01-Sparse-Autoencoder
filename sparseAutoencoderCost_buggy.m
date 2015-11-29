@@ -45,60 +45,40 @@ b2grad = zeros(size(b2));
 
 %tic;
 m = size(data,2);
+% Feed forward
+z2 = W1*data + repmat(b1,[1 m]);
+a2 = sigmoid(z2);
+z3 = W2*a2 + repmat(b2,[1 m]);
+a3 = sigmoid(z3);
 
-J_Wb = 0;
-rho = zeros(size(b1));
-for k = 1:m
-    x = data(:,k);
-    y = x;
-    
-    % Feed forward
-    z2 = W1*x + b1;
-    a2 = sigmoid(z2);
-    z3 = W2*a2 + b2;
-    a3 = sigmoid(z3);
-    
-    J_Wbxy = norm(a3-y)^2 / 2;
-    J_Wb = J_Wb + J_Wbxy;
-    
-    rho = rho+a2;
-end
-J_Wb = J_Wb/m + lambda / 2 * (sum(W1(:).^2)+sum(W2(:).^2));
-rho  = rho/m;
+% Squared Error Term
+diff = a3-data;
+squarederror = sum(diff.^2, 1); % 2 * J(W,b;x,y)
+meansquarederror = sum(squarederror) / m / 2; % 1/2 for squared error
 
-sp = 0;
-for j=1:numel(rho)
-    sp = sp + sparsityParam * log(sparsityParam/rho(j)) + (1-sparsityParam) * log( (1-sparsityParam)/(1-rho(j)) );
-end
 
-cost = J_Wb + beta * sp;
+% Weight Decay Term
+weightdecay = ( sum(W1(:).^2)+sum(W2(:).^2) ) * lambda / 2;
+
+% Sparsity penalty Term
+rho = sum(a2,2)./m;
+temp1 = sparsityParam./rho;
+temp2 = (1-sparsityParam)./(1-rho);
+KL = sparsityParam .* log(temp1) + (1-sparsityParam) .* log(temp2);
+sparsitypenalty = beta * sum(KL);
+
+
+% Integration
+cost = meansquarederror + weightdecay + sparsitypenalty;
+
 
 % Gradients
-for k = 1:m
-    % Feed forward
-    x = data(:,k);
-    y = x;
-    
-    % Feed forward
-    z2 = W1*x + b1;
-    a2 = sigmoid(z2);
-    z3 = W2*a2 + b2;
-    a3 = sigmoid(z3);
-
-    delta3 = -(y-a3).* (a3.*(1-a3));
-    delta2 = ( W2'*delta3 + beta*( -sparsityParam./rho + (1-sparsityParam)./(1-rho) ) ) .* (a2.*(1-a2));
-    
-    W1grad = W1grad + delta2 * x';
-    b1grad = b1grad + delta2;
-    W2grad = W2grad + delta3 * a2';
-    b2grad = b2grad + delta3;
-end
-
-W1grad = W1grad/m + lambda * W1;
-W2grad = W2grad/m + lambda * W2;
-b1grad = b1grad/m;
-b2grad = b2grad/m;
-
+delta3 = a3.*(1-a3) .* diff;
+delta2 = a2.*(1-a2) .* (W2'*delta3 + repmat( beta*(-temp1+temp2), [1,m] ) );
+W1grad = (delta2 * data')./m + W1 .* lambda;
+W2grad = (delta3 * a2')./m + W2 .* lambda;
+b1grad = sum(delta2,2)./m;
+b2grad = sum(delta3,2)./m;
 
 %toc;
 
