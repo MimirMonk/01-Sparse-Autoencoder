@@ -33,8 +33,11 @@ randimages = randi(imagenum, [numpatches, 1]);
 randheights = randi(imageheight-patchsize+1, [numpatches, 1]);
 randwidths = randi(imagewidth-patchsize+1, [numpatches, 1]);
 
-temppatches = IMAGES(randheights:randheights+patchsize-1, randwidths:randwidths+patchsize-1, randimages);
-patches = reshape(temppatches, patchsize*patchsize, numpatches);
+for i=1:numpatches
+    patch = IMAGES(randheights(i):randheights(i)+patchsize-1, randwidths(i):randwidths(i)+patchsize-1, randimages(i));
+    patches(:,i) = patch(:);
+end
+
 % toc;
 
 
